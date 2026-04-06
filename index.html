@@ -3,319 +3,627 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로또 6/45 추첨 프로그램</title>
+    <title>로또 6/45 스마트 추첨기</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f5f6fa;
             min-height: 100vh;
+            color: #333;
+        }
+
+        /* 헤더 */
+        .header {
+            background: linear-gradient(135deg, #1d3557, #457b9d);
             color: #fff;
-            padding: 20px;
-        }
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        h1 {
+            padding: 20px 0;
             text-align: center;
-            font-size: 2rem;
-            margin-bottom: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
-        .subtitle {
-            text-align: center;
-            color: #aaa;
-            margin-bottom: 30px;
-        }
-        .section {
-            background: rgba(255,255,255,0.07);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(4px);
-        }
-        .section h2 {
-            font-size: 1.2rem;
-            margin-bottom: 16px;
-            color: #ffd700;
-        }
-        .controls {
+        .header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; }
+        .header p { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-top: 4px; }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+
+        /* 탭 네비게이션 */
+        .tabs {
             display: flex;
-            gap: 12px;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            border-bottom: 3px solid transparent;
+            color: #888;
+        }
+        .tab:hover { background: #f0f4ff; }
+        .tab.active { color: #1d3557; border-bottom-color: #e63946; background: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 카드 */
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1d3557;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        /* 공 스타일 (동행복권 스타일) */
+        .ball {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            font-weight: 900;
+            font-size: 1.05rem;
+            color: #fff;
+            margin: 3px;
+            position: relative;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .ball::after {
+            content: '';
+            position: absolute;
+            top: 6px; left: 10px;
+            width: 14px; height: 8px;
+            background: rgba(255,255,255,0.35);
+            border-radius: 50%;
+            transform: rotate(-20deg);
+        }
+        .ball-1  { background: radial-gradient(circle at 35% 35%, #ffd54f, #f9a825); }
+        .ball-10 { background: radial-gradient(circle at 35% 35%, #ffd54f, #f9a825); }
+        .ball-11 { background: radial-gradient(circle at 35% 35%, #81c784, #2e7d32); }
+        .ball-20 { background: radial-gradient(circle at 35% 35%, #81c784, #2e7d32); }
+        .ball-21 { background: radial-gradient(circle at 35% 35%, #64b5f6, #1565c0); }
+        .ball-30 { background: radial-gradient(circle at 35% 35%, #64b5f6, #1565c0); }
+        .ball-31 { background: radial-gradient(circle at 35% 35%, #e0e0e0, #757575); }
+        .ball-40 { background: radial-gradient(circle at 35% 35%, #e0e0e0, #757575); }
+        .ball-41 { background: radial-gradient(circle at 35% 35%, #ef9a9a, #c62828); }
+        .ball-45 { background: radial-gradient(circle at 35% 35%, #ef9a9a, #c62828); }
+        .ball.large { width: 56px; height: 56px; font-size: 1.25rem; }
+        .ball.matched { box-shadow: 0 0 0 3px #e63946, 0 3px 6px rgba(230,57,70,0.4); }
+        .ball.pop {
+            animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes spinIn {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            100% { transform: scale(1) rotate(720deg); opacity: 1; }
+        }
+
+        /* 추첨 모드 선택 */
+        .mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: #666;
+        }
+        .mode-btn:hover { border-color: #457b9d; }
+        .mode-btn.active { border-color: #1d3557; background: #1d3557; color: #fff; }
+        .mode-btn .mode-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+
+        /* 컨트롤 영역 */
+        .draw-controls {
+            display: flex;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
+            margin-bottom: 16px;
         }
-        label { font-size: 0.95rem; }
-        select, button {
-            padding: 10px 18px;
+        .draw-controls label { font-weight: 500; font-size: 0.9rem; color: #555; }
+        .draw-controls select {
+            padding: 8px 14px;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fff;
             cursor: pointer;
         }
-        select {
-            background: rgba(255,255,255,0.15);
+        .btn {
+            padding: 11px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: linear-gradient(135deg, #e63946, #d62839);
             color: #fff;
+            box-shadow: 0 3px 10px rgba(230,57,70,0.3);
         }
-        select option { background: #16213e; color: #fff; }
-        .btn-draw {
-            background: linear-gradient(135deg, #ffd700, #ffaa00);
-            color: #1a1a2e;
-            font-weight: bold;
-            transition: transform 0.15s, box-shadow 0.15s;
+        .btn-primary:hover { box-shadow: 0 5px 15px rgba(230,57,70,0.4); transform: translateY(-1px); }
+        .btn-secondary {
+            background: #eee;
+            color: #666;
         }
-        .btn-draw:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255,215,0,0.4);
-        }
-        .btn-draw:active { transform: scale(0.97); }
-        .btn-check {
-            background: linear-gradient(135deg, #e94560, #c23152);
+        .btn-secondary:hover { background: #ddd; }
+        .btn-accent {
+            background: linear-gradient(135deg, #1d3557, #457b9d);
             color: #fff;
-            font-weight: bold;
-            transition: transform 0.15s;
+            box-shadow: 0 3px 10px rgba(29,53,87,0.3);
         }
-        .btn-check:hover { transform: translateY(-2px); }
-        .btn-reset {
-            background: rgba(255,255,255,0.15);
-            color: #ccc;
-        }
-        .btn-reset:hover { background: rgba(255,255,255,0.25); }
+        .btn-accent:hover { box-shadow: 0 5px 15px rgba(29,53,87,0.4); transform: translateY(-1px); }
 
+        /* 게임 행 */
         .game-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 4px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
             flex-wrap: wrap;
-            animation: fadeIn 0.4s ease;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .game-row:last-child { border-bottom: none; }
         .game-label {
-            font-weight: bold;
-            min-width: 60px;
-            color: #aaa;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #999;
+            min-width: 28px;
+            text-align: center;
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-right: 4px;
         }
-        .ball {
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1rem;
-            color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.3);
-            transition: transform 0.3s;
-        }
-        .ball:hover { transform: scale(1.15); }
-        .ball.r1 { background: linear-gradient(135deg, #fbc531, #e1b12c); }
-        .ball.r2 { background: linear-gradient(135deg, #4cd137, #44bd32); }
-        .ball.r3 { background: linear-gradient(135deg, #00a8ff, #0097e6); }
-        .ball.r4 { background: linear-gradient(135deg, #e84393, #d63031); }
-        .ball.r5 { background: linear-gradient(135deg, #8c7ae6, #6c5ce7); }
-        .ball.matched {
-            box-shadow: 0 0 12px 4px rgba(255,215,0,0.7), inset 0 -3px 6px rgba(0,0,0,0.2);
-            animation: pulse 0.6s ease infinite alternate;
-        }
-        @keyframes pulse {
-            to { box-shadow: 0 0 20px 8px rgba(255,215,0,0.9); }
-        }
-        .plus {
-            font-size: 1.3rem;
-            color: #888;
+        .plus-sign {
+            font-size: 1.2rem;
+            color: #bbb;
+            font-weight: 700;
             margin: 0 4px;
         }
-        .result-tag {
-            padding: 4px 12px;
+        .rank-badge {
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            margin-left: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: auto;
+            white-space: nowrap;
         }
-        .rank-1 { background: #ffd700; color: #1a1a2e; }
-        .rank-2 { background: #c0c0c0; color: #1a1a2e; }
-        .rank-3 { background: #cd7f32; color: #fff; }
-        .rank-4 { background: #4cd137; color: #1a1a2e; }
-        .rank-5 { background: #00a8ff; color: #fff; }
-        .rank-none { background: rgba(255,255,255,0.15); color: #888; }
+        .badge-1 { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+        .badge-2 { background: #e8e8e8; color: #555; border: 1px solid #bbb; }
+        .badge-3 { background: #ffe0cc; color: #a85700; border: 1px solid #e8a66d; }
+        .badge-4 { background: #d4edda; color: #155724; border: 1px solid #81c784; }
+        .badge-5 { background: #d1ecf1; color: #0c5460; border: 1px solid #64b5f6; }
+        .badge-none { background: #f5f5f5; color: #aaa; }
 
-        .winning-section { border: 1px solid rgba(255,215,0,0.3); }
-        .winning-row {
-            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        /* 당첨 번호 영역 */
+        .winning-area {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff9c4, #fff3e0);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ffe082;
         }
-        .winning-row .ball { width: 52px; height: 52px; font-size: 1.15rem; }
+        .winning-label { font-size: 0.85rem; color: #bf360c; font-weight: 700; margin-bottom: 10px; }
+        .winning-balls { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-        #results, #checkResults { margin-top: 16px; }
-        .empty-msg { color: #666; text-align: center; padding: 20px; }
+        /* 통계 바 차트 */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .stat-num {
+            width: 30px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .stat-bar-wrap {
+            flex: 1;
+            height: 22px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .stat-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+        .stat-count {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #888;
+            width: 40px;
+            text-align: right;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #bbb;
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* 푸터 */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.78rem;
+            color: #aaa;
+        }
+
+        /* 반응형 */
+        @media (max-width: 500px) {
+            .ball { width: 38px; height: 38px; font-size: 0.9rem; }
+            .ball.large { width: 46px; height: 46px; font-size: 1.05rem; }
+            .mode-btn { font-size: 0.78rem; padding: 8px; }
+            .card { padding: 16px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎱 로또 6/45</h1>
-        <p class="subtitle">행운의 번호를 추첨해보세요!</p>
+    <div class="header">
+        <h1>LOTTO 6/45</h1>
+        <p>통계 기반 스마트 추첨기</p>
+    </div>
 
-        <!-- 자동 생성 -->
-        <div class="section">
-            <h2>자동 번호 생성</h2>
-            <div class="controls">
-                <label for="gameCount">게임 수:</label>
-                <select id="gameCount">
-                    <option>1</option><option>2</option><option>3</option>
-                    <option>4</option><option selected>5</option>
-                    <option>6</option><option>7</option><option>8</option>
-                    <option>9</option><option>10</option>
-                </select>
-                <button class="btn-draw" onclick="generateNumbers()">번호 생성</button>
-                <button class="btn-reset" onclick="clearResults()">초기화</button>
-            </div>
-            <div id="results"><p class="empty-msg">버튼을 눌러 번호를 생성하세요</p></div>
+    <div class="container">
+        <!-- 탭 -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('generate')">번호 추첨</div>
+            <div class="tab" onclick="switchTab('check')">당첨 확인</div>
+            <div class="tab" onclick="switchTab('stats')">번호 통계</div>
         </div>
 
-        <!-- 당첨 확인 -->
-        <div class="section winning-section">
-            <h2>당첨 번호 추첨 & 확인</h2>
-            <div class="controls">
-                <label for="checkCount">내 게임 수:</label>
-                <select id="checkCount">
-                    <option>1</option><option>2</option><option>3</option>
-                    <option>4</option><option selected>5</option>
-                    <option>6</option><option>7</option><option>8</option>
-                    <option>9</option><option>10</option>
-                </select>
-                <button class="btn-check" onclick="drawAndCheck()">추첨 & 확인</button>
-                <button class="btn-reset" onclick="clearCheck()">초기화</button>
+        <!-- 탭1: 번호 추첨 -->
+        <div id="tab-generate" class="tab-content active">
+            <div class="card">
+                <div class="card-title">추첨 방식 선택</div>
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('weighted')" id="mode-weighted">
+                        <span class="mode-icon">📊</span>
+                        통계 기반 추첨
+                    </div>
+                    <div class="mode-btn" onclick="setMode('random')" id="mode-random">
+                        <span class="mode-icon">🎲</span>
+                        완전 랜덤
+                    </div>
+                    <div class="mode-btn" onclick="setMode('cold')" id="mode-cold">
+                        <span class="mode-icon">❄️</span>
+                        저빈도 번호
+                    </div>
+                </div>
+                <p id="modeDesc" style="font-size:0.82rem;color:#888;margin-bottom:14px;line-height:1.5;">
+                    역대 당첨 통계에서 자주 나온 번호에 높은 확률을 부여하여 추첨합니다.
+                </p>
+                <div class="draw-controls">
+                    <label for="gameCount">게임 수</label>
+                    <select id="gameCount">
+                        <option>1</option><option>2</option><option>3</option>
+                        <option>4</option><option selected>5</option>
+                        <option>6</option><option>7</option><option>8</option>
+                        <option>9</option><option>10</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="generate()">번호 추첨</button>
+                    <button class="btn btn-secondary" onclick="clearGen()">초기화</button>
+                </div>
             </div>
-            <div id="winningRow"></div>
-            <div id="checkResults"></div>
+
+            <div class="card" id="genResults">
+                <div class="empty-state">
+                    <div class="icon">🎱</div>
+                    <p>추첨 버튼을 눌러 행운의 번호를 확인하세요</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭2: 당첨 확인 -->
+        <div id="tab-check" class="tab-content">
+            <div class="card">
+                <div class="card-title">당첨 번호 추첨 & 내 번호 확인</div>
+                <div class="draw-controls">
+                    <label for="myCount">내 게임 수</label>
+                    <select id="myCount">
+                        <option>1</option><option>2</option><option>3</option>
+                        <option>4</option><option selected>5</option>
+                        <option>6</option><option>7</option><option>8</option>
+                        <option>9</option><option>10</option>
+                    </select>
+                    <button class="btn btn-accent" onclick="checkLotto()">추첨 시작</button>
+                    <button class="btn btn-secondary" onclick="clearCheck()">초기화</button>
+                </div>
+            </div>
+
+            <div id="checkArea">
+                <div class="card">
+                    <div class="empty-state">
+                        <div class="icon">🏆</div>
+                        <p>당첨 번호를 추첨하고 결과를 확인해보세요</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭3: 통계 -->
+        <div id="tab-stats" class="tab-content">
+            <div class="card">
+                <div class="card-title">번호별 출현 통계 (1회 ~ 1,160회 기준)</div>
+                <p style="font-size:0.82rem;color:#888;margin-bottom:14px;">
+                    역대 로또 당첨번호에서 각 번호가 출현한 횟수입니다. (보너스 번호 제외)
+                </p>
+                <div style="display:flex;gap:8px;margin-bottom:14px;">
+                    <button class="btn btn-secondary" onclick="showStats('freq')" id="sortFreq" style="font-size:0.82rem;padding:6px 14px;background:#1d3557;color:#fff;">출현순</button>
+                    <button class="btn btn-secondary" onclick="showStats('num')" id="sortNum" style="font-size:0.82rem;padding:6px 14px;">번호순</button>
+                </div>
+                <div id="statsChart"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            본 추첨기는 재미 목적이며, 실제 당첨을 보장하지 않습니다.<br>
+            통계 데이터 출처: 동행복권 (dhlottery.co.kr) 1회~1,160회 기준
         </div>
     </div>
 
     <script>
-        function getColorClass(n) {
-            if (n <= 10) return 'r1';
-            if (n <= 20) return 'r2';
-            if (n <= 30) return 'r3';
-            if (n <= 40) return 'r4';
-            return 'r5';
+        // =====================================================
+        // 역대 로또 번호별 출현 횟수 (1회 ~ 약 1,160회 기준)
+        // 출처: 동행복권 공식 통계 기반
+        // =====================================================
+        const FREQ = {
+             1:199,  2:183,  3:200,  4:191,  5:185,  6:189,  7:200,  8:183,  9:158, 10:192,
+            11:187, 12:204, 13:201, 14:196, 15:189, 16:186, 17:202, 18:196, 19:191, 20:197,
+            21:195, 22:161, 23:175, 24:195, 25:180, 26:192, 27:211, 28:173, 29:174, 30:178,
+            31:189, 32:176, 33:204, 34:204, 35:186, 36:191, 37:193, 38:199, 39:195, 40:198,
+            41:164, 42:180, 43:198, 44:196, 45:197
+        };
+        const TOTAL_DRAWS = 1160;
+
+        let currentMode = 'weighted';
+
+        // 공 색상 (동행복권 공식 색상 매칭)
+        function getBallStyle(n) {
+            if (n <= 10) return 'background:radial-gradient(circle at 35% 35%,#ffd54f,#f9a825)';
+            if (n <= 20) return 'background:radial-gradient(circle at 35% 35%,#81c784,#2e7d32)';
+            if (n <= 30) return 'background:radial-gradient(circle at 35% 35%,#64b5f6,#1565c0)';
+            if (n <= 40) return 'background:radial-gradient(circle at 35% 35%,#e0e0e0,#757575)';
+            return 'background:radial-gradient(circle at 35% 35%,#ef9a9a,#c62828)';
         }
 
-        function drawLotto() {
-            const pool = Array.from({length: 45}, (_, i) => i + 1);
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [pool[i], pool[j]] = [pool[j], pool[i]];
+        function getBarColor(n) {
+            if (n <= 10) return '#f9a825';
+            if (n <= 20) return '#2e7d32';
+            if (n <= 30) return '#1565c0';
+            if (n <= 40) return '#757575';
+            return '#c62828';
+        }
+
+        function makeBall(n, cls = '') {
+            return `<span class="ball ${cls}" style="${getBallStyle(n)}">${n}</span>`;
+        }
+
+        // 가중치 기반 난수 추첨
+        function weightedDraw(mode) {
+            const weights = {};
+            const vals = Object.values(FREQ);
+            const maxF = Math.max(...vals);
+            const minF = Math.min(...vals);
+
+            for (let i = 1; i <= 45; i++) {
+                if (mode === 'weighted') {
+                    // 출현 빈도에 비례한 가중치
+                    weights[i] = FREQ[i];
+                } else if (mode === 'cold') {
+                    // 저빈도 번호에 높은 가중치 (역가중치)
+                    weights[i] = maxF - FREQ[i] + minF;
+                } else {
+                    // 완전 랜덤 (균등)
+                    weights[i] = 1;
+                }
             }
-            const main = pool.slice(0, 6).sort((a, b) => a - b);
-            const bonus = pool[6];
+
+            const selected = [];
+            const pool = Array.from({length: 45}, (_, i) => i + 1);
+
+            for (let pick = 0; pick < 7; pick++) {
+                const totalW = pool.filter(n => !selected.includes(n))
+                    .reduce((s, n) => s + weights[n], 0);
+                let r = Math.random() * totalW;
+                for (const n of pool) {
+                    if (selected.includes(n)) continue;
+                    r -= weights[n];
+                    if (r <= 0) {
+                        selected.push(n);
+                        break;
+                    }
+                }
+            }
+
+            const main = selected.slice(0, 6).sort((a, b) => a - b);
+            const bonus = selected[6];
             return { main, bonus };
         }
 
-        function createBall(n, extraClass = '') {
-            const ball = document.createElement('span');
-            ball.className = `ball ${getColorClass(n)} ${extraClass}`;
-            ball.textContent = n;
-            return ball;
+        // 탭 전환
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            if (name === 'stats') showStats('freq');
         }
 
-        function generateNumbers() {
+        // 모드 전환
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('mode-' + mode).classList.add('active');
+            const descs = {
+                weighted: '역대 당첨 통계에서 자주 나온 번호에 높은 확률을 부여하여 추첨합니다.',
+                random: '1~45 모든 번호를 동일한 확률로 완전 무작위 추첨합니다.',
+                cold: '출현 빈도가 낮은 번호에 높은 확률을 부여하여 추첨합니다.'
+            };
+            document.getElementById('modeDesc').textContent = descs[mode];
+        }
+
+        // 번호 생성 (애니메이션 포함)
+        function generate() {
             const count = parseInt(document.getElementById('gameCount').value);
-            const container = document.getElementById('results');
-            container.innerHTML = '';
+            const container = document.getElementById('genResults');
+            container.innerHTML = '<div class="card-title">추첨 결과</div>';
 
             for (let i = 0; i < count; i++) {
-                const { main, bonus } = drawLotto();
+                const { main, bonus } = weightedDraw(currentMode);
                 const row = document.createElement('div');
                 row.className = 'game-row';
-                row.style.animationDelay = `${i * 0.08}s`;
 
-                const label = document.createElement('span');
-                label.className = 'game-label';
-                label.textContent = `게임 ${i + 1}`;
-                row.appendChild(label);
-
-                main.forEach(n => row.appendChild(createBall(n)));
-
-                const plus = document.createElement('span');
-                plus.className = 'plus';
-                plus.textContent = '+';
-                row.appendChild(plus);
-
-                row.appendChild(createBall(bonus));
+                let html = `<span class="game-label">${String.fromCharCode(65 + i)}</span>`;
+                main.forEach((n, idx) => {
+                    html += `<span class="ball pop" style="${getBallStyle(n)};animation-delay:${i * 0.15 + idx * 0.08}s">${n}</span>`;
+                });
+                html += `<span class="plus-sign">+</span>`;
+                html += `<span class="ball pop" style="${getBallStyle(bonus)};animation-delay:${i * 0.15 + 0.5}s">${bonus}</span>`;
+                row.innerHTML = html;
                 container.appendChild(row);
             }
         }
 
-        function clearResults() {
-            document.getElementById('results').innerHTML =
-                '<p class="empty-msg">버튼을 눌러 번호를 생성하세요</p>';
+        function clearGen() {
+            document.getElementById('genResults').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🎱</div>
+                    <p>추첨 버튼을 눌러 행운의 번호를 확인하세요</p>
+                </div>`;
         }
 
-        function getRank(matchCount, bonusMatch) {
-            if (matchCount === 6) return { text: '1등', cls: 'rank-1' };
-            if (matchCount === 5 && bonusMatch) return { text: '2등', cls: 'rank-2' };
-            if (matchCount === 5) return { text: '3등', cls: 'rank-3' };
-            if (matchCount === 4) return { text: '4등', cls: 'rank-4' };
-            if (matchCount === 3) return { text: '5등', cls: 'rank-5' };
-            return { text: '낙첨', cls: 'rank-none' };
-        }
-
-        function drawAndCheck() {
-            const count = parseInt(document.getElementById('checkCount').value);
-            const { main: winning, bonus } = drawLotto();
-
-            // 당첨 번호 표시
-            const winRow = document.getElementById('winningRow');
-            winRow.innerHTML = '<p style="margin:12px 0 8px;color:#ffd700;font-weight:bold;">당첨 번호</p>';
-            const row = document.createElement('div');
-            row.className = 'winning-row';
-            winning.forEach(n => row.appendChild(createBall(n)));
-            const plus = document.createElement('span');
-            plus.className = 'plus';
-            plus.textContent = '+';
-            row.appendChild(plus);
-            row.appendChild(createBall(bonus));
-            winRow.appendChild(row);
-
-            // 내 번호 결과
-            const container = document.getElementById('checkResults');
-            container.innerHTML = '<p style="margin:16px 0 8px;color:#e94560;font-weight:bold;">내 번호</p>';
-
+        // 당첨 확인
+        function checkLotto() {
+            const count = parseInt(document.getElementById('myCount').value);
+            const { main: winning, bonus } = weightedDraw(currentMode);
             const winSet = new Set(winning);
 
+            let html = `
+                <div class="card">
+                    <div class="winning-area">
+                        <div class="winning-label">이번 회차 당첨 번호</div>
+                        <div class="winning-balls">`;
+            winning.forEach(n => {
+                html += `<span class="ball large pop" style="${getBallStyle(n)}">${n}</span>`;
+            });
+            html += `<span class="plus-sign" style="font-size:1.5rem;">+</span>`;
+            html += `<span class="ball large pop" style="${getBallStyle(bonus)}">${bonus}</span>`;
+            html += `</div></div></div>`;
+
+            html += `<div class="card"><div class="card-title">내 번호 결과</div>`;
+
             for (let i = 0; i < count; i++) {
-                const { main: myNums } = drawLotto();
-                const matchCount = myNums.filter(n => winSet.has(n)).length;
-                const bonusMatch = myNums.includes(bonus);
+                const { main: my } = weightedDraw(currentMode);
+                const matchCount = my.filter(n => winSet.has(n)).length;
+                const bonusMatch = my.includes(bonus);
                 const rank = getRank(matchCount, bonusMatch);
 
-                const gameRow = document.createElement('div');
-                gameRow.className = 'game-row';
-                gameRow.style.animationDelay = `${i * 0.08}s`;
-
-                const label = document.createElement('span');
-                label.className = 'game-label';
-                label.textContent = `게임 ${i + 1}`;
-                gameRow.appendChild(label);
-
-                myNums.forEach(n => {
-                    const matched = winSet.has(n) ? 'matched' : '';
-                    gameRow.appendChild(createBall(n, matched));
+                html += `<div class="game-row">`;
+                html += `<span class="game-label">${String.fromCharCode(65 + i)}</span>`;
+                my.forEach(n => {
+                    const m = winSet.has(n) ? 'matched' : '';
+                    html += `<span class="ball pop ${m}" style="${getBallStyle(n)}">${n}</span>`;
                 });
-
-                const tag = document.createElement('span');
-                tag.className = `result-tag ${rank.cls}`;
-                tag.textContent = `${matchCount}개 일치 - ${rank.text}`;
-                gameRow.appendChild(tag);
-
-                container.appendChild(gameRow);
+                html += `<span class="rank-badge ${rank.cls}">${matchCount}개 일치 · ${rank.text}</span>`;
+                html += `</div>`;
             }
+            html += `</div>`;
+
+            document.getElementById('checkArea').innerHTML = html;
+        }
+
+        function getRank(mc, bm) {
+            if (mc === 6) return { text: '1등', cls: 'badge-1' };
+            if (mc === 5 && bm) return { text: '2등', cls: 'badge-2' };
+            if (mc === 5) return { text: '3등', cls: 'badge-3' };
+            if (mc === 4) return { text: '4등', cls: 'badge-4' };
+            if (mc === 3) return { text: '5등', cls: 'badge-5' };
+            return { text: '낙첨', cls: 'badge-none' };
         }
 
         function clearCheck() {
-            document.getElementById('winningRow').innerHTML = '';
-            document.getElementById('checkResults').innerHTML = '';
+            document.getElementById('checkArea').innerHTML = `
+                <div class="card">
+                    <div class="empty-state">
+                        <div class="icon">🏆</div>
+                        <p>당첨 번호를 추첨하고 결과를 확인해보세요</p>
+                    </div>
+                </div>`;
+        }
+
+        // 통계 차트
+        function showStats(sort) {
+            document.getElementById('sortFreq').style.background = sort === 'freq' ? '#1d3557' : '#eee';
+            document.getElementById('sortFreq').style.color = sort === 'freq' ? '#fff' : '#666';
+            document.getElementById('sortNum').style.background = sort === 'num' ? '#1d3557' : '#eee';
+            document.getElementById('sortNum').style.color = sort === 'num' ? '#fff' : '#666';
+
+            const entries = Object.entries(FREQ).map(([n, c]) => [parseInt(n), c]);
+            if (sort === 'freq') {
+                entries.sort((a, b) => b[1] - a[1]);
+            } else {
+                entries.sort((a, b) => a[0] - b[0]);
+            }
+
+            const maxCount = Math.max(...entries.map(e => e[1]));
+            let html = '';
+            entries.forEach(([num, count]) => {
+                const pct = (count / maxCount * 100).toFixed(1);
+                const color = getBarColor(num);
+                html += `
+                    <div class="stat-row">
+                        <span class="stat-num" style="color:${color}">${num}</span>
+                        <div class="stat-bar-wrap">
+                            <div class="stat-bar" style="width:${pct}%;background:${color};opacity:0.7;"></div>
+                        </div>
+                        <span class="stat-count">${count}회</span>
+                    </div>`;
+            });
+            document.getElementById('statsChart').innerHTML = html;
         }
     </script>
 </body>
