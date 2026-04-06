@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 6/45 추첨 프로그램</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #ffd700;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        label { font-size: 0.95rem; }
+        select, button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        select {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        select option { background: #16213e; color: #fff; }
+        .btn-draw {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+            font-weight: bold;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-draw:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,215,0,0.4);
+        }
+        .btn-draw:active { transform: scale(0.97); }
+        .btn-check {
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: #fff;
+            font-weight: bold;
+            transition: transform 0.15s;
+        }
+        .btn-check:hover { transform: translateY(-2px); }
+        .btn-reset {
+            background: rgba(255,255,255,0.15);
+            color: #ccc;
+        }
+        .btn-reset:hover { background: rgba(255,255,255,0.25); }
+
+        .game-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .game-label {
+            font-weight: bold;
+            min-width: 60px;
+            color: #aaa;
+        }
+        .ball {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1rem;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .ball:hover { transform: scale(1.15); }
+        .ball.r1 { background: linear-gradient(135deg, #fbc531, #e1b12c); }
+        .ball.r2 { background: linear-gradient(135deg, #4cd137, #44bd32); }
+        .ball.r3 { background: linear-gradient(135deg, #00a8ff, #0097e6); }
+        .ball.r4 { background: linear-gradient(135deg, #e84393, #d63031); }
+        .ball.r5 { background: linear-gradient(135deg, #8c7ae6, #6c5ce7); }
+        .ball.matched {
+            box-shadow: 0 0 12px 4px rgba(255,215,0,0.7), inset 0 -3px 6px rgba(0,0,0,0.2);
+            animation: pulse 0.6s ease infinite alternate;
+        }
+        @keyframes pulse {
+            to { box-shadow: 0 0 20px 8px rgba(255,215,0,0.9); }
+        }
+        .plus {
+            font-size: 1.3rem;
+            color: #888;
+            margin: 0 4px;
+        }
+        .result-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .rank-1 { background: #ffd700; color: #1a1a2e; }
+        .rank-2 { background: #c0c0c0; color: #1a1a2e; }
+        .rank-3 { background: #cd7f32; color: #fff; }
+        .rank-4 { background: #4cd137; color: #1a1a2e; }
+        .rank-5 { background: #00a8ff; color: #fff; }
+        .rank-none { background: rgba(255,255,255,0.15); color: #888; }
+
+        .winning-section { border: 1px solid rgba(255,215,0,0.3); }
+        .winning-row {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .winning-row .ball { width: 52px; height: 52px; font-size: 1.15rem; }
+
+        #results, #checkResults { margin-top: 16px; }
+        .empty-msg { color: #666; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎱 로또 6/45</h1>
+        <p class="subtitle">행운의 번호를 추첨해보세요!</p>
+
+        <!-- 자동 생성 -->
+        <div class="section">
+            <h2>자동 번호 생성</h2>
+            <div class="controls">
+                <label for="gameCount">게임 수:</label>
+                <select id="gameCount">
+                    <option>1</option><option>2</option><option>3</option>
+                    <option>4</option><option selected>5</option>
+                    <option>6</option><option>7</option><option>8</option>
+                    <option>9</option><option>10</option>
+                </select>
+                <button class="btn-draw" onclick="generateNumbers()">번호 생성</button>
+                <button class="btn-reset" onclick="clearResults()">초기화</button>
+            </div>
+            <div id="results"><p class="empty-msg">버튼을 눌러 번호를 생성하세요</p></div>
+        </div>
+
+        <!-- 당첨 확인 -->
+        <div class="section winning-section">
+            <h2>당첨 번호 추첨 & 확인</h2>
+            <div class="controls">
+                <label for="checkCount">내 게임 수:</label>
+                <select id="checkCount">
+                    <option>1</option><option>2</option><option>3</option>
+                    <option>4</option><option selected>5</option>
+                    <option>6</option><option>7</option><option>8</option>
+                    <option>9</option><option>10</option>
+                </select>
+                <button class="btn-check" onclick="drawAndCheck()">추첨 & 확인</button>
+                <button class="btn-reset" onclick="clearCheck()">초기화</button>
+            </div>
+            <div id="winningRow"></div>
+            <div id="checkResults"></div>
+        </div>
+    </div>
+
+    <script>
+        function getColorClass(n) {
+            if (n <= 10) return 'r1';
+            if (n <= 20) return 'r2';
+            if (n <= 30) return 'r3';
+            if (n <= 40) return 'r4';
+            return 'r5';
+        }
+
+        function drawLotto() {
+            const pool = Array.from({length: 45}, (_, i) => i + 1);
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            const main = pool.slice(0, 6).sort((a, b) => a - b);
+            const bonus = pool[6];
+            return { main, bonus };
+        }
+
+        function createBall(n, extraClass = '') {
+            const ball = document.createElement('span');
+            ball.className = `ball ${getColorClass(n)} ${extraClass}`;
+            ball.textContent = n;
+            return ball;
+        }
+
+        function generateNumbers() {
+            const count = parseInt(document.getElementById('gameCount').value);
+            const container = document.getElementById('results');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const { main, bonus } = drawLotto();
+                const row = document.createElement('div');
+                row.className = 'game-row';
+                row.style.animationDelay = `${i * 0.08}s`;
+
+                const label = document.createElement('span');
+                label.className = 'game-label';
+                label.textContent = `게임 ${i + 1}`;
+                row.appendChild(label);
+
+                main.forEach(n => row.appendChild(createBall(n)));
+
+                const plus = document.createElement('span');
+                plus.className = 'plus';
+                plus.textContent = '+';
+                row.appendChild(plus);
+
+                row.appendChild(createBall(bonus));
+                container.appendChild(row);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML =
+                '<p class="empty-msg">버튼을 눌러 번호를 생성하세요</p>';
+        }
+
+        function getRank(matchCount, bonusMatch) {
+            if (matchCount === 6) return { text: '1등', cls: 'rank-1' };
+            if (matchCount === 5 && bonusMatch) return { text: '2등', cls: 'rank-2' };
+            if (matchCount === 5) return { text: '3등', cls: 'rank-3' };
+            if (matchCount === 4) return { text: '4등', cls: 'rank-4' };
+            if (matchCount === 3) return { text: '5등', cls: 'rank-5' };
+            return { text: '낙첨', cls: 'rank-none' };
+        }
+
+        function drawAndCheck() {
+            const count = parseInt(document.getElementById('checkCount').value);
+            const { main: winning, bonus } = drawLotto();
+
+            // 당첨 번호 표시
+            const winRow = document.getElementById('winningRow');
+            winRow.innerHTML = '<p style="margin:12px 0 8px;color:#ffd700;font-weight:bold;">당첨 번호</p>';
+            const row = document.createElement('div');
+            row.className = 'winning-row';
+            winning.forEach(n => row.appendChild(createBall(n)));
+            const plus = document.createElement('span');
+            plus.className = 'plus';
+            plus.textContent = '+';
+            row.appendChild(plus);
+            row.appendChild(createBall(bonus));
+            winRow.appendChild(row);
+
+            // 내 번호 결과
+            const container = document.getElementById('checkResults');
+            container.innerHTML = '<p style="margin:16px 0 8px;color:#e94560;font-weight:bold;">내 번호</p>';
+
+            const winSet = new Set(winning);
+
+            for (let i = 0; i < count; i++) {
+                const { main: myNums } = drawLotto();
+                const matchCount = myNums.filter(n => winSet.has(n)).length;
+                const bonusMatch = myNums.includes(bonus);
+                const rank = getRank(matchCount, bonusMatch);
+
+                const gameRow = document.createElement('div');
+                gameRow.className = 'game-row';
+                gameRow.style.animationDelay = `${i * 0.08}s`;
+
+                const label = document.createElement('span');
+                label.className = 'game-label';
+                label.textContent = `게임 ${i + 1}`;
+                gameRow.appendChild(label);
+
+                myNums.forEach(n => {
+                    const matched = winSet.has(n) ? 'matched' : '';
+                    gameRow.appendChild(createBall(n, matched));
+                });
+
+                const tag = document.createElement('span');
+                tag.className = `result-tag ${rank.cls}`;
+                tag.textContent = `${matchCount}개 일치 - ${rank.text}`;
+                gameRow.appendChild(tag);
+
+                container.appendChild(gameRow);
+            }
+        }
+
+        function clearCheck() {
+            document.getElementById('winningRow').innerHTML = '';
+            document.getElementById('checkResults').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
