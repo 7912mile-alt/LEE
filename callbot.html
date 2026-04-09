@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 응대 콜봇 템플릿</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #4f7cff;
+            --primary-dark: #3a5fcc;
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --bot-bubble: #eef2ff;
+            --user-bubble: #4f7cff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --warn: #f59e0b;
+        }
+        body {
+            font-family: -apple-system, 'Segoe UI', 'Pretendard', 'Malgun Gothic', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .app {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 860px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { order: 2; }
+        }
+
+        /* ===== Sidebar (설정/메뉴) ===== */
+        .sidebar {
+            background: var(--panel);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        .sidebar h3 {
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            margin-top: 16px;
+        }
+        .sidebar h3:first-child { margin-top: 0; }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+        .brand-logo {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: bold; font-size: 1.1rem;
+        }
+        .brand-name { font-weight: 700; font-size: 1rem; }
+        .brand-status { font-size: 0.75rem; color: var(--success); }
+        .brand-status::before {
+            content: '●';
+            margin-right: 4px;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .menu-item:hover { background: var(--bg); }
+        .menu-item .badge {
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .stat-box {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-num { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.7rem; color: var(--muted); }
+
+        /* ===== Chat Panel ===== */
+        .chat {
+            background: var(--panel);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            min-height: 560px;
+            overflow: hidden;
+        }
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-title { font-weight: 600; }
+        .chat-subtitle { font-size: 0.8rem; color: var(--muted); }
+        .header-actions button {
+            background: var(--bg);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text);
+            transition: background 0.15s;
+        }
+        .header-actions button:hover { background: #e5e7eb; }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: linear-gradient(180deg, #fafbff 0%, #ffffff 100%);
+        }
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-thumb {
+            background: #d1d5db; border-radius: 3px;
+        }
+        .msg {
+            display: flex;
+            gap: 10px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg.bot { align-self: flex-start; }
+        .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+        .avatar {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .msg.bot .avatar {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+        }
+        .msg.user .avatar {
+            background: var(--bg);
+        }
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.93rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .msg.bot .bubble {
+            background: var(--bot-bubble);
+            color: var(--text);
+            border-top-left-radius: 4px;
+        }
+        .msg.user .bubble {
+            background: var(--user-bubble);
+            color: #fff;
+            border-top-right-radius: 4px;
+        }
+        .timestamp {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* Quick replies */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+            padding-left: 44px;
+        }
+        .quick-reply {
+            background: #fff;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-reply:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* Typing indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 14px 18px;
+        }
+        .typing span {
+            width: 6px; height: 6px;
+            background: var(--muted);
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* Input area */
+        .input-area {
+            border-top: 1px solid var(--border);
+            padding: 16px 20px;
+            background: #fff;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .input-row input:focus { border-color: var(--primary); }
+        .send-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background 0.15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .send-btn:hover { background: var(--primary-dark); }
+        .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .input-hint {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- ============ 사이드바 ============ -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">CB</div>
+            <div>
+                <div class="brand-name">고객센터 콜봇</div>
+                <div class="brand-status">온라인</div>
+            </div>
+        </div>
+
+        <h3>메뉴</h3>
+        <div class="menu-item" onclick="quickAction('상담 시작')">
+            <span>💬 상담 시작</span>
+        </div>
+        <div class="menu-item" onclick="quickAction('자주 묻는 질문')">
+            <span>❓ FAQ</span>
+            <span class="badge">NEW</span>
+        </div>
+        <div class="menu-item" onclick="quickAction('상담사 연결')">
+            <span>👤 상담사 연결</span>
+        </div>
+        <div class="menu-item" onclick="resetChat()">
+            <span>🔄 대화 초기화</span>
+        </div>
+
+        <h3>오늘 응대</h3>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-num" id="statMsgs">0</div>
+                <div class="stat-label">메시지</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num" id="statResolved">0</div>
+                <div class="stat-label">해결</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ 채팅창 ============ -->
+    <section class="chat">
+        <div class="chat-header">
+            <div>
+                <div class="chat-title">실시간 상담</div>
+                <div class="chat-subtitle">평균 응답 시간 1초 이내</div>
+            </div>
+            <div class="header-actions">
+                <button onclick="resetChat()">새 대화</button>
+            </div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="input-area">
+            <div class="input-row">
+                <input
+                    type="text"
+                    id="userInput"
+                    placeholder="메시지를 입력하세요..."
+                    autocomplete="off"
+                />
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+            <div class="input-hint">엔터키로 전송 · 사이드바 메뉴로 빠르게 시작하세요</div>
+        </div>
+    </section>
+</div>
+
+<script>
+/* ============================================================
+   📌 콜봇 설정 — 이 부분만 수정하면 15분 안에 세팅 완료
+   ============================================================ */
+const BOT_CONFIG = {
+    // 봇 인사말
+    greeting: "안녕하세요! 고객센터 콜봇입니다. 😊\n무엇을 도와드릴까요? 아래에서 선택하시거나 직접 질문을 입력해 주세요.",
+
+    // 첫 화면 빠른 응답 버튼
+    initialQuickReplies: [
+        "주문 조회",
+        "배송 문의",
+        "교환/반품",
+        "회원 정보",
+        "결제 문제",
+        "상담사 연결"
+    ],
+
+    // 키워드 → 응답 매핑 (의도 분류)
+    intents: [
+        {
+            keywords: ["주문", "구매내역", "주문조회", "주문 조회"],
+            response: "주문 조회를 도와드리겠습니다.\n\n📦 주문 내역은 아래 방법으로 확인하실 수 있어요:\n1. 마이페이지 > 주문 내역\n2. 주문번호로 직접 조회\n\n주문번호를 알려주시면 바로 확인해 드릴게요.",
+            quickReplies: ["배송 조회", "주문 취소", "메인으로"]
+        },
+        {
+            keywords: ["배송", "택배", "배송조회", "배송 조회", "언제 와요"],
+            response: "🚚 배송 정보 안내\n\n• 일반 배송: 주문 후 2~3일 소요\n• 당일 배송: 오후 2시 이전 주문 시\n• 제주/도서산간: 추가 1~2일\n\n운송장 번호는 발송 시 SMS로 전송됩니다.",
+            quickReplies: ["배송 지연", "주소 변경", "메인으로"]
+        },
+        {
+            keywords: ["교환", "반품", "환불", "취소"],
+            response: "🔁 교환/반품 안내\n\n• 신청 기한: 상품 수령 후 7일 이내\n• 단순 변심: 왕복 배송비 고객 부담\n• 상품 하자: 무료 교환/반품\n\n신청은 마이페이지 > 주문내역 > 교환/반품 신청에서 가능합니다.",
+            quickReplies: ["환불 일정", "반품 주소", "메인으로"]
+        },
+        {
+            keywords: ["회원", "가입", "탈퇴", "비밀번호", "로그인"],
+            response: "👤 회원 정보 관련 안내\n\n• 비밀번호 재설정: 로그인 화면 > '비밀번호 찾기'\n• 회원 정보 수정: 마이페이지 > 회원정보\n• 회원 탈퇴: 마이페이지 하단 > 탈퇴 신청\n\n어떤 부분이 궁금하신가요?",
+            quickReplies: ["비밀번호 재설정", "회원 탈퇴", "메인으로"]
+        },
+        {
+            keywords: ["결제", "카드", "결제오류", "결제 안", "결제실패"],
+            response: "💳 결제 관련 안내\n\n결제가 진행되지 않는 경우 다음을 확인해 주세요:\n1. 카드 한도 및 유효기간\n2. 브라우저 캐시 삭제 후 재시도\n3. 다른 결제 수단 시도\n\n문제가 지속되면 상담사 연결을 도와드리겠습니다.",
+            quickReplies: ["상담사 연결", "결제 수단", "메인으로"]
+        },
+        {
+            keywords: ["FAQ", "자주", "묻는", "질문"],
+            response: "❓ 자주 묻는 질문 TOP 5\n\n1️⃣ 배송은 얼마나 걸리나요?\n2️⃣ 교환/반품은 어떻게 하나요?\n3️⃣ 회원가입 혜택은 무엇인가요?\n4️⃣ 적립금은 어떻게 사용하나요?\n5️⃣ 영수증 발급은 어디서 하나요?\n\n원하시는 항목을 입력해 주세요.",
+            quickReplies: ["배송 문의", "교환/반품", "메인으로"]
+        },
+        {
+            keywords: ["상담사", "상담원", "사람", "직원", "연결"],
+            response: "👨‍💼 상담사 연결 안내\n\n현재 대기 인원: 약 2명\n예상 대기 시간: 약 3분\n\n상담 가능 시간:\n• 평일 09:00 ~ 18:00\n• 주말/공휴일 휴무\n\n잠시만 기다려 주세요. 상담사가 곧 연결됩니다.",
+            quickReplies: ["대기 취소", "메인으로"]
+        },
+        {
+            keywords: ["안녕", "하이", "헬로", "hi", "hello"],
+            response: "안녕하세요! 😊 무엇을 도와드릴까요?",
+            quickReplies: ["주문 조회", "배송 문의", "상담사 연결"]
+        },
+        {
+            keywords: ["감사", "고마워", "땡큐"],
+            response: "도움이 되어 기쁩니다! 😊\n다른 문의사항이 있으시면 언제든 말씀해 주세요.",
+            quickReplies: ["메인으로"]
+        },
+        {
+            keywords: ["메인", "처음", "시작"],
+            response: null, // 아래에서 greeting으로 채워짐
+            quickReplies: null // null이면 initialQuickReplies 사용
+        }
+    ],
+
+    // 매칭 실패 시 기본 응답
+    fallback: {
+        response: "죄송합니다, 질문을 정확히 이해하지 못했어요. 🙏\n아래 메뉴 중에서 선택하시거나 다른 키워드로 질문해 주세요.",
+        quickReplies: ["주문 조회", "배송 문의", "상담사 연결"]
+    },
+
+    // 봇 응답 지연 (밀리초) — 더 자연스러운 대화 효과
+    typingDelay: 600
+};
+
+// "메인" 의도의 응답에 인사말 채우기
+BOT_CONFIG.intents.find(i => i.keywords.includes("메인")).response = BOT_CONFIG.greeting;
+
+/* ============================================================
+   콜봇 동작 로직 (수정 불필요)
+   ============================================================ */
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+let stats = { msgs: 0, resolved: 0 };
+
+function updateStats() {
+    document.getElementById('statMsgs').textContent = stats.msgs;
+    document.getElementById('statResolved').textContent = stats.resolved;
+}
+
+function timeNow() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2, '0') + ':' +
+           d.getMinutes().toString().padStart(2, '0');
+}
+
+function addMessage(text, sender, quickReplies = null) {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = sender === 'user' ? 'flex-end' : 'flex-start';
+
+    const msg = document.createElement('div');
+    msg.className = `msg ${sender}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+
+    const content = document.createElement('div');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    const ts = document.createElement('div');
+    ts.className = 'timestamp';
+    ts.textContent = timeNow();
+    content.appendChild(bubble);
+    content.appendChild(ts);
+
+    msg.appendChild(avatar);
+    msg.appendChild(content);
+    wrapper.appendChild(msg);
+
+    if (quickReplies && quickReplies.length && sender === 'bot') {
+        const qrWrap = document.createElement('div');
+        qrWrap.className = 'quick-replies';
+        quickReplies.forEach(q => {
+            const btn = document.createElement('button');
+            btn.className = 'quick-reply';
+            btn.textContent = q;
+            btn.onclick = () => quickAction(q);
+            qrWrap.appendChild(btn);
+        });
+        wrapper.appendChild(qrWrap);
+    }
+
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'typing-indicator';
+    wrapper.className = 'msg bot';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = '🤖';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.style.padding = '0';
+    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideTyping() {
+    const t = document.getElementById('typing-indicator');
+    if (t) t.remove();
+}
+
+function findIntent(text) {
+    const lower = text.toLowerCase().replace(/\s+/g, '');
+    for (const intent of BOT_CONFIG.intents) {
+        for (const kw of intent.keywords) {
+            if (lower.includes(kw.toLowerCase().replace(/\s+/g, ''))) {
+                return intent;
+            }
+        }
+    }
+    return null;
+}
+
+function botReply(userText) {
+    showTyping();
+    setTimeout(() => {
+        hideTyping();
+        const intent = findIntent(userText);
+        if (intent) {
+            const qr = intent.quickReplies === null
+                ? BOT_CONFIG.initialQuickReplies
+                : intent.quickReplies;
+            addMessage(intent.response, 'bot', qr);
+            stats.resolved++;
+        } else {
+            addMessage(BOT_CONFIG.fallback.response, 'bot', BOT_CONFIG.fallback.quickReplies);
+        }
+        updateStats();
+    }, BOT_CONFIG.typingDelay);
+}
+
+function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    addMessage(text, 'user');
+    inputEl.value = '';
+    stats.msgs++;
+    updateStats();
+    botReply(text);
+}
+
+function quickAction(text) {
+    addMessage(text, 'user');
+    stats.msgs++;
+    updateStats();
+    botReply(text);
+}
+
+function resetChat() {
+    messagesEl.innerHTML = '';
+    stats = { msgs: 0, resolved: 0 };
+    updateStats();
+    addMessage(BOT_CONFIG.greeting, 'bot', BOT_CONFIG.initialQuickReplies);
+}
+
+inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+// 초기 인사
+window.addEventListener('DOMContentLoaded', resetChat);
+</script>
+</body>
+</html>
