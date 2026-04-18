@@ -1,0 +1,21 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: gov-signal-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gov_signal
+      POSTGRES_PASSWORD: gov_signal_dev
+      POSTGRES_DB: gov_signal
+    ports:
+      - "5433:5432"
+    volumes:
+      - gov_signal_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gov_signal -d gov_signal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gov_signal_pgdata:
